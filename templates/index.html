@@ -1,0 +1,43 @@
+<!-- index.html -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Video Streamer</title>
+</head>
+<body>
+    <h1>Video Streamer</h1>
+    <video id="video" width="640" height="480"></video>
+    <script>
+        const streamId = "my_stream";
+        const apiUrl = `http://31.128.43.241:8000/send_frame_from_string/${streamId}`;
+
+        navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+            .then(stream => {
+                const video = document.getElementById("video");
+                video.srcObject = stream;
+                video.play();
+
+                // Capture frames from the video stream
+                const canvas = document.createElement("canvas");
+                const ctx = canvas.getContext("2d");
+                canvas.width = video.width;
+                canvas.height = video.height;
+
+                setInterval(() => {
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    const frame = canvas.toDataURL("image/jpeg");
+                    const base64str = frame.split(",")[1];
+
+                    // Send the base64-encoded frame to the API endpoint
+                    fetch(apiUrl, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ img_base64str: base64str })
+                    });
+                }, 33); // 33ms = 30fps
+            })
+            .catch(error => console.error("Error accessing webcam:", error));
+    </script>
+</body>
+</html>
